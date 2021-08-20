@@ -9,10 +9,19 @@ const io = new Server(3001, {
 
 // when connection is established to this server from client side, listen to the socket
 io.on("connection", (socket) => {
-	// when the socket sends changes broadcast it (sent to all others except this user)
-	socket.on("send-changes", (delta) => {
-		console.log(delta);
-		socket.broadcast.emit("receive-changes", delta);
+	// we start off by receiving the documentId and sending the document to the client
+	socket.on("get-document", (documentId) => {
+		const data = "";
+		// console.log("got document", documentId);
+		socket.join(documentId);
+		socket.emit("load-document", data);
+
+		// when the socket sends changes broadcast it (sent to all others except this user)
+		socket.on("send-changes", (delta) => {
+			// console.log(delta);
+			socket.broadcast.to(documentId).emit("receive-changes", delta);
+		});
 	});
+
 	console.log("connected");
 });
