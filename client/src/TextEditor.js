@@ -5,6 +5,8 @@ import "quill/dist/quill.snow.css";
 import { io } from "socket.io-client";
 import { useParams } from "react-router-dom";
 
+const SAVE_INTERVAL_MS = 2000;
+
 export default function TextEditor() {
 	const { id: documentId } = useParams();
 	const [socket, setSocket] = useState();
@@ -22,8 +24,8 @@ export default function TextEditor() {
 		};
 	}, []);
 
-	// for emitting document id to the socket whenever documentId or socket or quill changes
 	// handling different rooms on the client side
+	// for emitting document id to the socket whenever documentId or socket or quill changes
 	useEffect(() => {
 		if (socket == null || quill == null) return;
 
@@ -40,6 +42,18 @@ export default function TextEditor() {
 		socket.emit("get-document", documentId);
 	}, [socket, quill, documentId]);
 
+	// saving to the database periodically
+	useEffect(() => {
+		if (socket == null || quill == null) return;
+
+		const interval = setInterval(() => {
+			socket.emit("save-document", quill.getContents());
+		}, SAVE_INTERVAL_MS);
+
+		return () => {
+			clearInterval(interval);
+		};
+	}, [socket, quill]);
 	// callback to add the editor to the wrapper div
 	const wrapperRef = useCallback((wrapper) => {
 		if (wrapper == null) return;
